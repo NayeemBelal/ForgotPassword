@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// src/App.js
+import React, { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
 import "./App.css";
 
@@ -8,18 +9,21 @@ function App() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ← NEW: exchange the code for a session on mount
+  // 1) On load, exchange the one-time code for a session
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     if (code) {
-      // supabase-js v2:
       supabase.auth
-        .exchangeCodeForSession(code)
+        .exchangeCodeForSession(code) // v2 SDK
         .then(({ data, error }) => {
-          if (error) setMessage("Could not validate reset link.");
+          if (error) {
+            console.error("Code exchange error:", error);
+            setMessage("Invalid or expired reset link.");
+          }
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("Unexpected exchange error:", err);
           setMessage("Unexpected error validating reset link.");
         });
     }
@@ -43,7 +47,6 @@ function App() {
     }
 
     try {
-      // now that we have a session, this will work
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
 
@@ -51,6 +54,7 @@ function App() {
       setPassword("");
       setConfirmPassword("");
     } catch (error) {
+      console.error("Update error:", error);
       setMessage(error.message || "An error occurred while updating password");
     } finally {
       setLoading(false);
@@ -61,7 +65,6 @@ function App() {
     <div className="password-reset-container">
       <h1>Reset Your Password</h1>
       <form onSubmit={handleResetPassword} className="password-reset-form">
-        className="password-reset-form">
         <div className="form-group">
           <label htmlFor="password">New Password</label>
           <input
@@ -73,6 +76,7 @@ function App() {
             required
           />
         </div>
+
         <div className="form-group">
           <label htmlFor="confirmPassword">Confirm Password</label>
           <input
@@ -84,9 +88,11 @@ function App() {
             required
           />
         </div>
+
         <button type="submit" disabled={loading}>
           {loading ? "Updating..." : "Reset Password"}
         </button>
+
         {message && (
           <div
             className={`message ${
