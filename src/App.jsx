@@ -61,7 +61,32 @@ function App() {
     <div className="password-reset-container">
       <h1>Reset Your Password</h1>
       <form onSubmit={handleResetPassword} className="password-reset-form">
-        {/* … your inputs and button … */}
+        className="password-reset-form">
+        <div className="form-group">
+          <label htmlFor="password">New Password</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter new password"
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="confirmPassword">Confirm Password</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm new password"
+            required
+          />
+        </div>
+        <button type="submit" disabled={loading}>
+          {loading ? "Updating..." : "Reset Password"}
+        </button>
         {message && (
           <div
             className={`message ${
