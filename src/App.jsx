@@ -3,32 +3,55 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
 import "./App.css";
 
-function App() {
+export default function App() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 1) On load, exchange the one-time code for a session
+  // null = still checking link, false = bad link, true = ok
+  const [linkValid, setLinkValid] = (useState < null) | (boolean > null);
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    if (code) {
-      supabase.auth
-        .exchangeCodeForSession(code) // v2 SDK
-        .then(({ data, error }) => {
-          if (error) {
-            console.error("Code exchange error:", error);
-            setMessage("Invalid or expired reset link.");
-          }
-        })
-        .catch((err) => {
-          console.error("Unexpected exchange error:", err);
-          setMessage("Unexpected error validating reset link.");
-        });
-    }
+    // 1) listen for the PASSWORD_RECOVERY event
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" && session) {
+        setLinkValid(true);
+      }
+    });
+
+    // 2) trigger Supabase to parse the URL and emit that event
+    supabase.auth.getSessionFromUrl({ storeSession: true }).catch((err) => {
+      console.error("getSessionFromUrl error:", err);
+      setLinkValid(false);
+      setMessage("Invalid or expired reset link.");
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
+  // show spinner/message while we’re validating the link
+  if (linkValid === null) {
+    return (
+      <div className="password-reset-container">Verifying reset link…</div>
+    );
+  }
+
+  // if link is bad, bail early
+  if (!linkValid) {
+    return (
+      <div className="password-reset-container">
+        <h1>Reset Your Password</h1>
+        <div className="message error">Invalid or expired reset link.</div>
+      </div>
+    );
+  }
+
+  // otherwise the link is good, show the form:
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setMessage("");
@@ -39,7 +62,6 @@ function App() {
       setLoading(false);
       return;
     }
-
     if (password.length < 6) {
       setMessage("Password must be at least 6 characters long");
       setLoading(false);
@@ -49,7 +71,6 @@ function App() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-
       setMessage("Password updated successfully!");
       setPassword("");
       setConfirmPassword("");
@@ -106,5 +127,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
