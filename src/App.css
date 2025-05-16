@@ -1,9 +1,15 @@
+/* -------------  Global layout & defaults --------------------------- */
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
 }
+
+/* -------------  Logo (from the Vite starter) ----------------------- */
 
 .logo {
   height: 6em;
@@ -11,43 +17,37 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  /* Glow colour switched from #646cffaa → #86cefaaa */
+  filter: drop-shadow(0 0 2em #86cefaaa);
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
+/* -------------  Generic card utility ------------------------------- */
 
 .card {
   padding: 2em;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #2d2d2d;
+  margin-bottom: 2rem;
 }
 
-.read-the-docs {
-  color: #888;
+/* -------------  Links ---------------------------------------------- */
+
+a {
+  color: #86cefa; /* was #646cff */
 }
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* -------------  Forgot-password form ------------------------------- */
 
 .password-reset-container {
-  max-width: 400px;
+  max-width: 480px;
   margin: 0 auto;
-  padding: 2rem;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .password-reset-form {
@@ -55,6 +55,8 @@
   flex-direction: column;
   gap: 1rem;
 }
+
+/* Form field grouping */
 
 .form-group {
   display: flex;
@@ -64,26 +66,29 @@
 }
 
 .form-group label {
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
 }
 
 .form-group input {
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 1rem;
 }
 
+/* Focus ring colour updated */
+
 .form-group input:focus {
   outline: none;
-  border-color: #646cff;
-  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2);
+  border-color: #86cefa;
+  box-shadow: 0 0 0 2px rgba(134, 206, 250, 0.2);
 }
 
+/* -------------  Buttons -------------------------------------------- */
+
 button {
-  background-color: #646cff;
-  color: white;
+  background-color: #86cefa; /* was #646cff */
+  color: #ffffff;
   padding: 0.75rem;
   border: none;
   border-radius: 4px;
@@ -94,57 +99,40 @@ button {
 }
 
 button:hover {
-  background-color: #535bf2;
+  background-color: #66bde9;
 }
 
+/* Cool-down / disabled state — now #555555 */
+
 button:disabled {
-  background-color: #cccccc;
+  background-color: #555555;
   cursor: not-allowed;
 }
 
+/* -------------  Status messages ------------------------------------ */
+
 .message {
-  margin-top: 1rem;
   padding: 0.75rem;
   border-radius: 4px;
-  font-weight: 500;
+  border: 1px solid;
+  font-size: 0.9rem;
 }
 
 .message.success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background-color: #1e4620;
+  color: #d4edda;
+  border-color: #2a5a2a;
 }
 
 .message.error {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+  background-color: #462020;
+  color: #f8d7da;
+  border-color: #5a2a2a;
 }
 
-@media (prefers-color-scheme: dark) {
-  .password-reset-container {
-    background-color: #1a1a1a;
-  }
+/* -------------  Small helper text ---------------------------------- */
 
-  .form-group label {
-    color: #ffffff;
-  }
-
-  .form-group input {
-    background-color: #2a2a2a;
-    border-color: #404040;
-    color: #ffffff;
-  }
-
-  .message.success {
-    background-color: #1e4620;
-    color: #d4edda;
-    border-color: #2a5a2a;
-  }
-
-  .message.error {
-    background-color: #462020;
-    color: #f8d7da;
-    border-color: #5a2a2a;
-  }
+.helper {
+  font-size: 0.8rem;
+  color: #aaaaaa;
 }
