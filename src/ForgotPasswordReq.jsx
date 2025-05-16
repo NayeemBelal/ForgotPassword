@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { supabase } from "./supabaseClient";
 import "./App.css"; // reuse the same styles you already ship
 
-export default function ForgotPassword() {
+export default function ForgotPasswordReq() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState({ msg: "", ok: false });
   const [sending, setSending] = useState(false);
