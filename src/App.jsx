@@ -10,54 +10,60 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [email, setEmail] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
-    const checkSession = async () => {
+    const checkAuth = async () => {
       try {
-        // Get the current session
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
+        // Check URL hash for access token (implicit flow)
+        const hashParams = new URLSearchParams(
+          window.location.hash.substring(1)
+        );
+        const accessToken = hashParams.get("access_token");
+        const type = hashParams.get("type");
 
-        if (sessionError) throw sessionError;
-
-        // Check URL parameters
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get("code");
-        const emailParam = params.get("email"); // Get email from URL if present
+        // Get email from URL query params
+        const urlParams = new URLSearchParams(window.location.search);
+        const emailParam = urlParams.get("email");
 
         if (emailParam) {
           setEmail(emailParam);
         }
 
+        // First check if we already have a session
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (session) {
           setIsAuthenticated(true);
-        } else if (code) {
+          setMessage("You can now reset your password.");
+        }
+        // If no session but we have an access token in the URL
+        else if (accessToken && type === "recovery") {
           try {
-            // Try to exchange the code for a session
-            const { error } = await supabase.auth.exchangeCodeForSession(code);
+            // Set the access token
+            const { error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: null,
+            });
 
             if (error) {
-              console.error("Code exchange error:", error);
-              // If code exchange fails, we'll need to request a new reset link
-              setMessage(
-                "This reset link has expired or is invalid. Need a new one?"
-              );
-            } else {
-              setIsAuthenticated(true);
-              setMessage("You can now reset your password.");
-
-              // Clean up the URL
-              window.history.replaceState(
-                {},
-                document.title,
-                window.location.pathname
-              );
+              throw error;
             }
-          } catch (err) {
-            console.error("Exchange error:", err);
-            setMessage("An error occurred. Need a new reset link?");
+
+            setIsAuthenticated(true);
+            setMessage("You can now reset your password.");
+
+            // Clean up the URL
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname
+            );
+          } catch (error) {
+            console.error("Auth error:", error);
+            setMessage("This reset link is invalid. Need a new one?");
           }
         } else {
           setMessage(
@@ -65,14 +71,14 @@ function App() {
           );
         }
       } catch (error) {
-        console.error("Session check error:", error);
-        setMessage("Error checking session. Need a new reset link?");
+        console.error("Auth check error:", error);
+        setMessage("Error checking authentication. Need a new reset link?");
       } finally {
         setAuthChecked(true);
       }
     };
 
-    checkSession();
+    checkAuth();
   }, []);
 
   const requestNewResetLink = async () => {
@@ -124,6 +130,7 @@ function App() {
       );
       setPassword("");
       setConfirmPassword("");
+      setIsSuccess(true);
 
       // Sign out after successful password reset
       await supabase.auth.signOut();
@@ -143,6 +150,16 @@ function App() {
       <div className="password-reset-container">
         <h1>Reset Your Password</h1>
         <div className="loading">Verifying your request...</div>
+      </div>
+    );
+  }
+
+  // Show success message only
+  if (isSuccess) {
+    return (
+      <div className="password-reset-container">
+        <h1>Reset Your Password</h1>
+        <div className="message success">{message}</div>
       </div>
     );
   }
@@ -200,7 +217,7 @@ function App() {
           <button type="submit" disabled={loading}>
             {loading ? "Updating..." : "Reset Password"}
           </button>
-          {message && (
+          {message && !isSuccess && (
             <div
               className={`message ${
                 message.includes("successfully") ? "success" : "error"
