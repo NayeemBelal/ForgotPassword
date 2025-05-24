@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { supabase } from "./supabaseClient";
+import { supabase, handlePasswordReset } from "./supabaseClient";
 import "./App.css";
 
 function App() {
@@ -9,35 +9,46 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [email, setEmail] = useState("");
 
-  // Check for authentication on component mount
   useEffect(() => {
     const checkSession = async () => {
-      // Get the current session
-      const { data } = await supabase.auth.getSession();
+      try {
+        // Get the current session
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
-      if (data.session) {
-        setIsAuthenticated(true);
-      } else {
-        // Check if there's a code in the URL that needs to be exchanged
+        if (sessionError) throw sessionError;
+
+        // Check URL parameters
         const params = new URLSearchParams(window.location.search);
         const code = params.get("code");
+        const emailParam = params.get("email"); // Get email from URL if present
 
-        if (code) {
+        if (emailParam) {
+          setEmail(emailParam);
+        }
+
+        if (session) {
+          setIsAuthenticated(true);
+        } else if (code) {
           try {
-            // Let Supabase handle the code exchange through the configured client
+            // Try to exchange the code for a session
             const { error } = await supabase.auth.exchangeCodeForSession(code);
 
             if (error) {
               console.error("Code exchange error:", error);
+              // If code exchange fails, we'll need to request a new reset link
               setMessage(
-                "Invalid or expired reset link. Please request a new password reset email."
+                "This reset link has expired or is invalid. Need a new one?"
               );
             } else {
               setIsAuthenticated(true);
               setMessage("You can now reset your password.");
 
-              // Optional: Clean up the URL by removing the code parameter
+              // Clean up the URL
               window.history.replaceState(
                 {},
                 document.title,
@@ -45,26 +56,53 @@ function App() {
               );
             }
           } catch (err) {
-            console.error("Unexpected exchange error:", err);
-            setMessage("An error occurred while validating your reset link.");
+            console.error("Exchange error:", err);
+            setMessage("An error occurred. Need a new reset link?");
           }
         } else {
-          setMessage("Please use the password reset link from your email.");
+          setMessage(
+            "Please use a valid password reset link or request a new one."
+          );
         }
+      } catch (error) {
+        console.error("Session check error:", error);
+        setMessage("Error checking session. Need a new reset link?");
+      } finally {
+        setAuthChecked(true);
       }
-
-      setAuthChecked(true);
     };
 
     checkSession();
   }, []);
+
+  const requestNewResetLink = async () => {
+    if (!email) {
+      setMessage("Please enter your email address.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { success, error } = await handlePasswordReset(email);
+      if (success) {
+        setMessage("Check your email for a new password reset link!");
+      } else {
+        setMessage(
+          error.message || "Failed to send reset link. Please try again."
+        );
+      }
+    } catch (error) {
+      setMessage("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setMessage("");
     setLoading(true);
 
-    // Validate passwords
     if (password !== confirmPassword) {
       setMessage("Passwords do not match");
       setLoading(false);
@@ -78,9 +116,7 @@ function App() {
     }
 
     try {
-      // Update the user's password
       const { error } = await supabase.auth.updateUser({ password });
-
       if (error) throw error;
 
       setMessage(
@@ -89,20 +125,19 @@ function App() {
       setPassword("");
       setConfirmPassword("");
 
-      // Optional: Sign the user out after successful password reset
-      // await supabase.auth.signOut();
-      // setIsAuthenticated(false);
+      // Sign out after successful password reset
+      await supabase.auth.signOut();
+      setIsAuthenticated(false);
     } catch (error) {
       console.error("Update error:", error);
       setMessage(
-        error.message || "An error occurred while updating your password"
+        error.message || "Failed to update password. Please try again."
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // Show loading state while checking authentication
   if (!authChecked) {
     return (
       <div className="password-reset-container">
@@ -117,7 +152,27 @@ function App() {
       <h1>Reset Your Password</h1>
 
       {!isAuthenticated ? (
-        <div className="message error">{message}</div>
+        <div className="request-reset-form">
+          <div className="message error">{message}</div>
+          <div className="form-group">
+            <label htmlFor="email">Email Address</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              required
+            />
+          </div>
+          <button
+            onClick={requestNewResetLink}
+            disabled={loading || !email}
+            className="request-link-button"
+          >
+            {loading ? "Sending..." : "Get New Reset Link"}
+          </button>
+        </div>
       ) : (
         <form onSubmit={handleResetPassword} className="password-reset-form">
           <div className="form-group">
@@ -131,7 +186,6 @@ function App() {
               required
             />
           </div>
-
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
             <input
@@ -143,11 +197,9 @@ function App() {
               required
             />
           </div>
-
           <button type="submit" disabled={loading}>
             {loading ? "Updating..." : "Reset Password"}
           </button>
-
           {message && (
             <div
               className={`message ${

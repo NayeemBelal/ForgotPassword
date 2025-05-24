@@ -136,3 +136,62 @@ button:disabled {
   font-size: 0.8rem;
   color: #aaaaaa;
 }
+
+.debug-info {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #6c757d;
+  word-break: break-all;
+}
+
+@media (prefers-color-scheme: dark) {
+  .debug-info {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    color: #a0aec0;
+  }
+}
+
+.request-reset-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.request-reset-form .form-group {
+  margin-top: 1rem;
+}
+
+.request-link-button {
+  margin-top: 1rem;
+  background-color: #4a5568;
+}
+
+.request-link-button:hover {
+  background-color: #2d3748;
+}
+
+.request-link-button:disabled {
+  background-color: #cbd5e0;
+  cursor: not-allowed;
+}
+
+@media (prefers-color-scheme: dark) {
+  .request-link-button {
+    background-color: #4a5568;
+  }
+
+  .request-link-button:hover {
+    background-color: #2d3748;
+  }
+
+  .request-link-button:disabled {
+    background-color: #2d3748;
+  }
+}
